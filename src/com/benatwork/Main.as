@@ -24,12 +24,12 @@
 	{
 		private var userID:String = "benatwork12";
 		//private var trackID:String = "26448994";
-		private var trackID:String = "28525938";
-		private var secretToken:String = "s-z55wi";
-		
+
+		private var trackIdArray:Array = ["28525938","28525938","28525938"];
+		private var secretTokenArray:Array = ["s-z55wi","s-z55wi","s-z55wi"];
 		private var API_KEY:String = "d2e9027079da528682ce6fb2735a6b62";
-		private var getTracksString = "https://api.soundcloud.com/tracks/"+trackID+".json?client_id="+API_KEY+"&secret_token="+secretToken;
-		private var getCommentsString = "https://api.soundcloud.com/tracks/"+trackID+"/comments.json?client_id="+API_KEY+"&secret_token="+secretToken;;
+		//private var getTracksString = "https://api.soundcloud.com/tracks/"+trackID+".json?client_id="+API_KEY+"&secret_token="+secretToken;
+		//private var getCommentsString = "https://api.soundcloud.com/tracks/"+trackID+"/comments.json?client_id="+API_KEY+"&secret_token="+secretToken;;
 		private var _sound:Sound;
 		private var _soundChannel : SoundChannel;
 		private var _isPaused:Boolean;
@@ -42,6 +42,9 @@
 		private var player:Player
 		private var isFinished:Boolean = false;
 		
+		private var currentTrackId:uint;
+		private var track:Track;
+		
 		public function Main()
 		{
 			player = new Player();
@@ -49,17 +52,22 @@
 			player.y = 74;
 			player.alpha = 0;
 			addChild(player);
-			getTracks();
+			initTrack(0);	
 		}
-		private function getTracks(){
+		
+		private function initTrack(trackId:uint){
+			getTracks(trackId);
+			currentTrackId = trackId;
+		}
+		private function getTracks(trackId:uint){
 			var loader:URLLoader = new URLLoader();
-			var request:URLRequest = new URLRequest(getTracksString);
+			var request:URLRequest = new URLRequest("https://api.soundcloud.com/tracks/"+trackIdArray[trackId]+".json?client_id="+API_KEY+"&secret_token="+secretTokenArray[trackId]);
 			loader.addEventListener(Event.COMPLETE, onTracksLoaded);
 			loader.load(request);
 		}
-		private function getComments(){
+		private function getComments(trackId:uint){
 			var loader:URLLoader = new URLLoader();
-			var request:URLRequest = new URLRequest(getCommentsString);
+			var request:URLRequest = new URLRequest("https://api.soundcloud.com/tracks/"+trackIdArray[trackId]+"/comments.json?client_id="+API_KEY+"&secret_token="+secretTokenArray[trackId]);
 			loader.addEventListener(Event.COMPLETE, onCommentsLoaded);
 			loader.load(request);
 		}
@@ -68,10 +76,10 @@
 			var loader:URLLoader = URLLoader(e.target);
 			var jsonData:Object = JSON.decode(loader.data);
 	
-			var track = new Track(jsonData);
-			getComments();
-			playTrack(track);
+			track = new Track(jsonData);
+			getComments(currentTrackId);
 			
+			playTrack(track);
 			
 		}
 		private function onCommentsLoaded(e:Event){
@@ -84,6 +92,7 @@
 				player.createComment(comment);
 			} 
 			TweenLite.to(player, 1, {alpha:1});
+			
 		}
 		private function playTrack(track : Track) : void {
 			var url : String = track.streamUrl;

@@ -170,11 +170,13 @@
 					console.text = comments[i].body; 
 				}
 			}
-			trace(_activeComment);
-			if(_currentTime > comments[_activeComment].timestamp + 200 && _activeComment != 0) {
-				_activeComment = 0; 
-				console.text = "";
-			}
+			trace("showing comment number " +_activeComment);
+			try{
+				if(_currentTime > comments[_activeComment].timestamp + 200 && _activeComment != 0) {
+					_activeComment = 0; 
+					console.text = "";
+				}
+			} catch (e:Error){ };
 		}
 		private function onPlayToggle(e:MouseEvent){
 			
