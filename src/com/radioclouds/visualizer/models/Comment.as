@@ -10,16 +10,20 @@ package com.radioclouds.visualizer.models {
     public var iconUrl : String;
     public var body : String;
     public var username : String;
+	public var userLink : String;
     public var createdAt : String;
 
-    public function Comment(data : XML) {
+    public function Comment(data : Object) {
 			
       timestamp = Number(data.timestamp);
-      isTimedComment = !Boolean(data.timestamp.@nil.toString());
+      //isTimedComment = !Boolean(data.timestamp.@nil.toString());
       isReply = Boolean(uint(data["reply-to-id"]) > 0);
-      iconUrl = data.user["avatar-url"].toString();
+	  ;
+	  var user:Object = data.user;
+      iconUrl = user["avatar-url"];
       body = data.body;
-      username = data.user.username;
+      username = user.username;
+	  userLink = user.permalink_url;
       createdAt = data["created-at"];
     }
   }

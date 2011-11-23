@@ -26,8 +26,7 @@ package com.radioclouds.visualizer.models {
     public var downloadCount : Number;
     public var commentCount : Number;
 
-    public function Track(data : XML) {
-			
+    public function Track(data : Object) {
       title = data.title;
       uri = data.uri;
       permalink = data.permalink;
@@ -39,21 +38,23 @@ package com.radioclouds.visualizer.models {
       artwork = data["artwork-url"];
       downloadable = (data["downloadable"] == "true");
       streamable = (data["streamable"] == "true");
-      streamUrl = data["stream-url"];
-      waveformUrl = data["waveform-url"];
-      userName = data.user.username;
-      userPermalink = data.user.permalink;
-      userPermalinkUrl = data.user["permalink-url"];
+      streamUrl = data["stream_url"];
+      waveformUrl = data["waveform_url"];
+	  var user:Object = data.user;
+      userName = user.username;
+      userPermalink = user.permalink;
+      userPermalinkUrl = user["permalink-url"];
       playbackCount = Number(data["playback-count"]);
       downloadCount = Number(data["download-count"]);
       commentCount = Number(data["comment-count"]);
-			
+		
+	
 			
       // parse all comments (if there are any) into array
-      var commentData : XMLList = data.comments.comment;
+      /*var commentData : XMLList = data.comments.comment;
       if(commentData.length() > 0) {
         parseComments(commentData);	
-      }
+      }*/
     }
 
     public function parseComments(commentData : XMLList) : void {
