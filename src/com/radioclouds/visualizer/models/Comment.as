@@ -6,7 +6,6 @@ package com.radioclouds.visualizer.models {
   public class Comment {
     public var timestamp : Number;
     public var isTimedComment : Boolean;
-    public var isReply : Boolean;
     public var iconUrl : String;
     public var body : String;
     public var username : String;
@@ -17,7 +16,7 @@ package com.radioclouds.visualizer.models {
 			
       timestamp = Number(data.timestamp);
       //isTimedComment = !Boolean(data.timestamp.@nil.toString());
-      isReply = Boolean(uint(data["reply-to-id"]) > 0);
+      //isReply = Boolean(uint(data["reply-to-id"]) > 0);
 	  ;
 	  var user:Object = data.user;
       iconUrl = user["avatar-url"];

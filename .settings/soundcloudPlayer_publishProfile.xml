@@ -91,14 +91,14 @@
     <AS3Dialect>AS3</AS3Dialect>
     <AS3ExportFrame>1</AS3ExportFrame>
     <AS3Optimize>1</AS3Optimize>
-    <ExportSwc>0</ExportSwc>
+    <ExportSwc>1</ExportSwc>
     <ScriptStuckDelay>15</ScriptStuckDelay>
     <IncludeXMP>1</IncludeXMP>
     <HardwareAcceleration>0</HardwareAcceleration>
     <AS3Flags>4102</AS3Flags>
     <DefaultLibraryLinkage>rsl</DefaultLibraryLinkage>
     <RSLPreloaderMethod>wrap</RSLPreloaderMethod>
-    <RSLPreloaderSWF></RSLPreloaderSWF>
+    <RSLPreloaderSWF>$(AppConfig)/ActionScript 3.0/rsls/loader_animation.swf</RSLPreloaderSWF>
     <LibraryPath>
       <library-path-entry>
         <swc-path>$(AppConfig)/ActionScript 3.0/libs</swc-path>
@@ -110,6 +110,10 @@
         <rsl-url>http://fpdownload.adobe.com/pub/swz/tlf/1.0.0.595/textLayout_1.0.0.595.swz</rsl-url>
         <policy-file-url>http://fpdownload.adobe.com/pub/swz/crossdomain.xml</policy-file-url>
         <rsl-url>textLayout_1.0.0.595.swz</rsl-url>
+      </library-path-entry>
+      <library-path-entry>
+        <swc-path>E:\_projects\soundcloud_player\src\soundcloudPlayer.swc</swc-path>
+        <linkage>merge</linkage>
       </library-path-entry>
     </LibraryPath>
     <LibraryVersions>

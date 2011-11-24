@@ -6,12 +6,13 @@
 	
 	import flash.display.Loader;
 	import flash.display.MovieClip;
-	import flash.display.Sprite;
-	import flash.display.Stage;
 	import flash.events.Event;
 	import flash.events.MouseEvent;
-	import flash.net.URLLoader;
 	import flash.net.URLRequest;
+	import flash.text.Font;
+	import flash.text.TextField;
+	import flash.text.TextFieldAutoSize;
+	import flash.text.TextFormat;
 	
 	public class Player extends flash.display.MovieClip
 	{
@@ -28,12 +29,16 @@
 		private var _seekMarker:MovieClip;
 		private var _currentTime:Number;
 		private var comments:Array = new Array();
+		private var commentClips:Array = new Array();
 		private var _playToggle:MovieClip;
-		private var _activeComment:uint
+		private var _activeComment:uint = 0;
 		
 		private var _volumeSliderPressed:Boolean = false;
 		private var _playerOver:Boolean = false;
 		private var _seekPressed:Boolean = false;
+		private var univers:Font;
+		
+		public var _console:TextField
 		
 		public function Player() 
 		{
@@ -46,18 +51,13 @@
 			_seekMarker = seekMarker;
 			_seekMarker.alpha = 0;
 			_playToggle = playToggle;
-			
-	
+			_console = console;
+			var univers = new Univers();
+			var selectorFormat:TextFormat = new TextFormat(univers.fontName,12,0xffffff);
+			_console.defaultTextFormat = selectorFormat;
+
 			_volumeSlider.addEventListener(MouseEvent.MOUSE_DOWN, onVolumeSliderDown);
-			
-			
-			_waveformLoader = new Loader();
-			_waveformLoader.visible = false;
-			_waveformLoader.mouseEnabled = false;
-			_progressBar = progress;
-			_bufferProgress = bufferProgress;
-			waveformHolder.addChild(_waveformLoader);
-			
+
 			waveformHit.addEventListener(MouseEvent.MOUSE_OVER, onPlayerOver);
 			waveformHit.addEventListener(MouseEvent.MOUSE_OUT, onPlayerOut);
 			waveformHit.addEventListener(MouseEvent.MOUSE_DOWN, onPlayerClick);
@@ -66,23 +66,39 @@
 			_playToggle.addEventListener(MouseEvent.MOUSE_DOWN, onPlayToggle);
 			_playToggle.buttonMode = true;
 			
-		}
-
+			univers = new Univers();
+		
 	
-
-		public function initPlayer(trackData:Track){	
+			
+		}
+		public function initPlayer(trackData:Track){
+			try{_waveformLoader.unload()}catch(e:Error){};
 			_totalTime = trackData.duration;
+			_waveformLoader = new Loader();
+			_waveformLoader.visible = false;
+			_waveformLoader.mouseEnabled = false;
+			_progressBar = progress;
+			_bufferProgress = bufferProgress;
+			for each (var i in commentClips){
+				removeChild(i);
+			}
+			_activeComment = 0;
+			console.text = "";
+			comments = new Array();
+			commentClips = new Array();
+			waveformHolder.addChild(_waveformLoader);
 			_waveformLoader.contentLoaderInfo.addEventListener(Event.COMPLETE, onWaveformLoaded);
-			_waveformLoader.load(new URLRequest(trackData.waveformUrl)); 	
+			_waveformLoader.load(new URLRequest(trackData.waveformUrl)); 
+			
 		}
 		private function onWaveformLoaded(e:Event){
 			_waveformLoader.width = this['waveform'].width;
 			_waveformLoader.height = this['waveform'].height;
 			_waveformLoader.visible = true;
 			
-			this.alpha = 0;
+			_waveformLoader.alpha = 0;
 			TweenMax.to(_waveformLoader,0, {tint:0xffffff});
-			TweenMax.to(this,1, {alpha:1});
+			TweenMax.to(_waveformLoader,1, {alpha:1});
 			this.addEventListener(Event.ENTER_FRAME, onEnterFrame);	
 			
 		}
@@ -95,6 +111,9 @@
 			}
 			if(_playerOver){
 				_seekMarker.x = mouseX;
+				checkCommentHit(true);
+			} else {
+				checkCommentHit();
 			}
 			if(_seekPressed){
 				seekPosition = (mouseX/waveform.width)*_totalTime;
@@ -102,7 +121,6 @@
 				if(mouseX < 0) seekPosition = 0;
 				dispatchEvent(new PlayerEvent(PlayerEvent.SEEK));
 			}
-			checkCommentHit();
 			
 		}
 
@@ -154,32 +172,43 @@
 		}
 		
 		public function createComment(cdata:Comment){
+			
 			var cm:CommentMark = new CommentMark();
 			cm.name = "comment"+comments.length;
 			addChild(cm);
 			comments.push(cdata);
+			commentClips.push(cm);
 			var n:Number = (cdata.timestamp/_totalTime)
 			cm.x = n*(waveformHit.width);
 		}
-		private function checkCommentHit(){
+		private function checkCommentHit(isSeeking:Boolean = false){
+			var nowTime:Number = isSeeking ? (mouseX/waveform.width)*_totalTime :_currentTime;
+			var preScan:Number = isSeeking ? 100 : 100;
+			var postScan:Number = isSeeking ? 100 : 1000;
 			
-			for(var i:Number = 0; i< comments.length ; i++){
-				if(_currentTime >= comments[i].timestamp - 20 && _currentTime <= comments[i].timestamp + 200 ){
-					_activeComment = i;
-					(getChildByName("comment"+i) as CommentMark).gotoAndStop(2);
-					console.text = comments[i].body; 
-				}
+			for (var i =0; i< comments.length; i++){
+				
+				var cm:Comment = comments[i] as Comment;
+				var startTime:Number = cm.timestamp - preScan;
+				var endTime:Number = cm.timestamp + postScan;
+				commentClips[i].gotoAndStop(1);
+				if (startTime < 0) startTime = 0;
+				if (endTime > _totalTime) endTime = _totalTime;
+				if( nowTime > startTime && nowTime < endTime && cm.body.charAt(0) != "@"){
+					_console.text = cm.username+": "+cm.body;
+					for (var j in comments){
+						if(cm.timestamp == comments[j].timestamp){
+							if(comments[j] != cm) _console.appendText("\n"+comments[j].username+": "+comments[j].body);
+						}
+					}
+					commentClips[i].gotoAndStop(2);
+					break;
+				} 
+				_console.text = "";
 			}
-			trace("showing comment number " +_activeComment);
-			try{
-				if(_currentTime > comments[_activeComment].timestamp + 200 && _activeComment != 0) {
-					_activeComment = 0; 
-					console.text = "";
-				}
-			} catch (e:Error){ };
+
 		}
 		private function onPlayToggle(e:MouseEvent){
-			
 			dispatchEvent(new PlayerEvent(PlayerEvent.PLAYTOGGLE));
 		}
 

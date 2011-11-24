@@ -6,6 +6,7 @@
       <libraryPathEntry kind="3" linkType="1" path="${FLASHPRO_APPCONFIG}/ActionScript 3.0/FP10/playerglobal.swc" useDefaultLinkType="false"/>
       <libraryPathEntry kind="1" linkType="1" path="${FLASHPRO_APPCONFIG}/ActionScript 3.0/libs"/>
       <libraryPathEntry kind="3" linkType="1" path="${FLASHPRO_APPCONFIG}/ActionScript 3.0/libs/11.0/textLayout.swc" useDefaultLinkType="false"/>
+      <libraryPathEntry kind="3" linkType="1" path="src/soundcloudPlayer.swc" useDefaultLinkType="false"/>
     </libraryPath>
     <sourceAttachmentPath/>
   </compiler>

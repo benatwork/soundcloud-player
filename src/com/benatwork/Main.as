@@ -23,13 +23,12 @@
 	public class Main extends Sprite
 	{
 		private var userID:String = "benatwork12";
-		//private var trackID:String = "26448994";
 
-		private var trackIdArray:Array = ["28525938","28525938","28525938"];
-		private var secretTokenArray:Array = ["s-z55wi","s-z55wi","s-z55wi"];
+		private var trackIdArray:Array = ["28525938","28525938","28525938","26448994"];
+		private var secretTokenArray:Array = ["s-z55wi","s-z55wi","s-z55wi","s-z55wi"];
+		private var clipTitles:Array = ["Inro", "Past", "Future", "10 Randoms"];
 		private var API_KEY:String = "d2e9027079da528682ce6fb2735a6b62";
-		//private var getTracksString = "https://api.soundcloud.com/tracks/"+trackID+".json?client_id="+API_KEY+"&secret_token="+secretToken;
-		//private var getCommentsString = "https://api.soundcloud.com/tracks/"+trackID+"/comments.json?client_id="+API_KEY+"&secret_token="+secretToken;;
+		
 		private var _sound:Sound;
 		private var _soundChannel : SoundChannel;
 		private var _isPaused:Boolean;
@@ -41,38 +40,86 @@
 		private var comments:Array = new Array();
 		private var player:Player
 		private var isFinished:Boolean = false;
+		private var selectors:Array = new Array();
 		
 		private var currentTrackId:uint;
 		private var track:Track;
 		
 		public function Main()
 		{
+			
 			player = new Player();
 			player.x = 47;
 			player.y = 74;
 			player.alpha = 0;
-			addChild(player);
-			initTrack(0);	
+			addChild(player);			
+			setupSelectors(clipTitles);
+			initTrack(0);
+			setChildIndex(player,numChildren - 1)
+			
 		}
-		
+		private function setupSelectors(titles:Array){
+			var totalWidth:Number = 0;
+			for (var i in clipTitles){
+				var sel:Selector = new Selector(i,clipTitles[i]);
+				addChild(sel);
+				sel.x = player.x + totalWidth;
+				sel.y = player.y-20;
+				selectors.push(sel);
+				totalWidth += sel.actualWidth;
+				sel.addEventListener(PlayerEvent.TRACK_SELECTED, onTrackChange);
+			}
+		}
+		private function onTrackChange(e:PlayerEvent = null){
+			
+			_soundChannel.stop();
+			_sound.removeEventListener(IOErrorEvent.IO_ERROR, onLoadError);
+			_sound.removeEventListener(ProgressEvent.PROGRESS, soundLoading);
+			_soundChannel.removeEventListener(Event.SOUND_COMPLETE, onSoundComplete);
+			e ? initTrack((e.currentTarget as Selector).id) : initTrack(currentTrackId + 1);
+		}
 		private function initTrack(trackId:uint){
-			getTracks(trackId);
 			currentTrackId = trackId;
+			getTracks(trackId);
+			for (var i in selectors){
+				//i == trackId ? selectors[i].activate() : selectors[i].deactivate();
+				if(i== trackId){
+					selectors[i].activate();
+				} else {
+					selectors[i].deactivate();
+				}
+			}
+			
 		}
 		private function getTracks(trackId:uint){
+			player._console.text = "Loading stream..."
 			var loader:URLLoader = new URLLoader();
 			var request:URLRequest = new URLRequest("https://api.soundcloud.com/tracks/"+trackIdArray[trackId]+".json?client_id="+API_KEY+"&secret_token="+secretTokenArray[trackId]);
 			loader.addEventListener(Event.COMPLETE, onTracksLoaded);
+			loader.addEventListener(IOErrorEvent.IO_ERROR, tracksError);
 			loader.load(request);
 		}
 		private function getComments(trackId:uint){
+			player._console.text = "Loading comments..."
 			var loader:URLLoader = new URLLoader();
 			var request:URLRequest = new URLRequest("https://api.soundcloud.com/tracks/"+trackIdArray[trackId]+"/comments.json?client_id="+API_KEY+"&secret_token="+secretTokenArray[trackId]);
 			loader.addEventListener(Event.COMPLETE, onCommentsLoaded);
+			loader.addEventListener(IOErrorEvent.IO_ERROR, commentsError);
 			loader.load(request);
 		}
+		private function commentsError(e:IOErrorEvent){
+			player._console.text = 'Error getting comments, retrying...';
+			getTracks(getComments(currentTrackId));
+		}
+		private function tracksError(e:IOErrorEvent){
+			player._console.text = 'Error getting the sound clip data, retrying...';
+			getTracks(currentTrackId);
+		}
+		
 
-		private function onTracksLoaded(e:Event):void {   
+		private function onTracksLoaded(e:Event):void {  
+			e.target.removeEventListener(Event.COMPLETE, onTracksLoaded);
+			e.target.removeEventListener(IOErrorEvent.IO_ERROR, tracksError);
 			var loader:URLLoader = URLLoader(e.target);
 			var jsonData:Object = JSON.decode(loader.data);
 	
@@ -83,6 +130,8 @@
 			
 		}
 		private function onCommentsLoaded(e:Event){
+			e.target.removeEventListener(Event.COMPLETE, onCommentsLoaded);
+			e.target.removeEventListener(IOErrorEvent.IO_ERROR, commentsError);
 			var loader:URLLoader = URLLoader(e.target);
 			var jsonData:Array = JSON.decode(loader.data);
 			
@@ -91,9 +140,9 @@
 				comments.push(comment);
 				player.createComment(comment);
 			} 
-			TweenLite.to(player, 1, {alpha:1});
-			
+			TweenLite.to(player, .5, {alpha:1});
 		}
+		
 		private function playTrack(track : Track) : void {
 			var url : String = track.streamUrl;
 			
@@ -119,9 +168,11 @@
 			addEventListener(Event.ENTER_FRAME, onUpdate);
 			
 			player.paused = _isPaused;
+			if(_isPaused) stopSound();
 		}
 		private function onLoadError(event : IOErrorEvent) : void {
-			trace("error loading uri!");
+			player._console.text = 'Error getting the sound clip, retrying...';
+			playTrack(track);
 		}
 		private function soundLoading(e:ProgressEvent){
 			var value:Number = e.bytesLoaded/e.bytesTotal;
@@ -177,7 +228,9 @@
 	
 		private function onSoundComplete(e:Event){
 			isFinished = true;
-			stopSound();
+			//stopSound();
+			trace(currentTrackId, trackIdArray.length);
+			currentTrackId+1 < trackIdArray.length ? onTrackChange() : stopSound();
 			
 		}
 		
