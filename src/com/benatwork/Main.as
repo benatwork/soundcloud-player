@@ -1,4 +1,12 @@
-﻿package com.benatwork
+﻿/*
+
+You just couldnt resist, could you. I slapped this together pretty quickly to get it functional, 
+and then started piling on features so dont judge!
+I plan to go back into it and clean things up at some point.
+
+*/
+
+package com.benatwork
 {
 	import com.adobe.serialization.json.JSON;
 	import com.benatwork.Player;
@@ -23,15 +31,13 @@
 	public class Main extends Sprite
 	{
 		private var userID:String = "benatwork12";
-
-		private var trackIdArray:Array = ["28525938","28525938","28525938","26448994"];
-		private var secretTokenArray:Array = ["s-z55wi","s-z55wi","s-z55wi","s-z55wi"];
-		private var clipTitles:Array = ["Inro", "Past", "Future", "10 Randoms"];
+		private var trackIdArray:Array = ["30719240","30719552","30719988","30720143","30720450"];
+		private var secretTokenArray:Array = ["s-zsvBu","s-l9cge","s-UO5WL","s-a0tQ5","s-e1CzB"];
+		private var clipTitles:Array = ["Intro", "Future", "Past","Outro", "10 Facts"];
 		private var API_KEY:String = "d2e9027079da528682ce6fb2735a6b62";
-		
 		private var _sound:Sound;
 		private var _soundChannel : SoundChannel;
-		private var _isPaused:Boolean;
+		private var _isPaused:Boolean = true;
 		private var _seekPosition:Number;
 		private var _soundDuration:Number;
 		private var _defaultVolume:Number = .8;
@@ -47,15 +53,13 @@
 		
 		public function Main()
 		{
-			
 			player = new Player();
 			player.x = 47;
 			player.y = 74;
 			player.alpha = 0;
 			addChild(player);			
-			setupSelectors(clipTitles);
+			
 			initTrack(0);
-			setChildIndex(player,numChildren - 1)
 			
 		}
 		private function setupSelectors(titles:Array){
@@ -63,7 +67,7 @@
 			for (var i in clipTitles){
 				var sel:Selector = new Selector(i,clipTitles[i]);
 				addChild(sel);
-				sel.x = player.x + totalWidth;
+				sel.x = player.x+20 + totalWidth;
 				sel.y = player.y-20;
 				selectors.push(sel);
 				totalWidth += sel.actualWidth;
@@ -71,7 +75,7 @@
 			}
 		}
 		private function onTrackChange(e:PlayerEvent = null){
-			
+			player._console.text = "Connecting to soundcloud..."
 			_soundChannel.stop();
 			_sound.removeEventListener(IOErrorEvent.IO_ERROR, onLoadError);
 			_sound.removeEventListener(ProgressEvent.PROGRESS, soundLoading);
@@ -81,6 +85,9 @@
 		private function initTrack(trackId:uint){
 			currentTrackId = trackId;
 			getTracks(trackId);
+			
+		}
+		private function toggleTrackTabs(trackId){
 			for (var i in selectors){
 				//i == trackId ? selectors[i].activate() : selectors[i].deactivate();
 				if(i== trackId){
@@ -89,10 +96,9 @@
 					selectors[i].deactivate();
 				}
 			}
-			
 		}
 		private function getTracks(trackId:uint){
-			player._console.text = "Loading stream..."
+			player._console.text = "Connecting to soundcloud..."
 			var loader:URLLoader = new URLLoader();
 			var request:URLRequest = new URLRequest("https://api.soundcloud.com/tracks/"+trackIdArray[trackId]+".json?client_id="+API_KEY+"&secret_token="+secretTokenArray[trackId]);
 			loader.addEventListener(Event.COMPLETE, onTracksLoaded);
@@ -125,7 +131,11 @@
 	
 			track = new Track(jsonData);
 			getComments(currentTrackId);
+			if( selectors.length < 1) setupSelectors(clipTitles);
+			toggleTrackTabs(currentTrackId)
+			TweenLite.to(player, .5, {alpha:1});
 			
+			setChildIndex(player,numChildren - 1)
 			playTrack(track);
 			
 		}
@@ -140,7 +150,7 @@
 				comments.push(comment);
 				player.createComment(comment);
 			} 
-			TweenLite.to(player, .5, {alpha:1});
+			
 		}
 		
 		private function playTrack(track : Track) : void {
@@ -166,7 +176,7 @@
 			
 			removeEventListener(Event.ENTER_FRAME, onUpdate);
 			addEventListener(Event.ENTER_FRAME, onUpdate);
-			
+			player._console.text = ""
 			player.paused = _isPaused;
 			if(_isPaused) stopSound();
 		}
@@ -219,16 +229,18 @@
 			player.paused = _isPaused;
 		}
 		private function changeSoundVolume(e:PlayerEvent = null) : void {
-			var nv:Number = e ? player.getVolume() : player.getVolume() ;
+			var nv:Number = e ? player.getVolume() : _defaultVolume ;
 			var transform:SoundTransform = new SoundTransform();
 			transform.volume = nv;
+			_defaultVolume = nv;	
 			_soundChannel.soundTransform = transform;
 			
 		}
 	
 		private function onSoundComplete(e:Event){
 			isFinished = true;
-			//stopSound();
+			stopSound();
+			resumeSound();
 			trace(currentTrackId, trackIdArray.length);
 			currentTrackId+1 < trackIdArray.length ? onTrackChange() : stopSound();
 			

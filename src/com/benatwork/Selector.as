@@ -30,7 +30,7 @@ package com.benatwork
 			selectorText = new TextField();
 			selectorText.selectable = false;
 			selectorText.autoSize =  TextFieldAutoSize.LEFT;
-			var selectorFormat:TextFormat = new TextFormat(univers.fontName,12,0xF8310E);
+			var selectorFormat:TextFormat = new TextFormat(univers.fontName,13,0xffba00);
 			selectorText.defaultTextFormat = selectorFormat;
 			selectorText.text = title;
 			
@@ -39,9 +39,10 @@ package com.benatwork
 			tab.alpha = 0;
 			addChild(selectorText);
 			selectorText.x += 10;
-			selectorText.y += 2;
+			selectorText.y += 0;
 			
 			addEventListener(MouseEvent.MOUSE_DOWN, onClick);
+			selectorText.mouseEnabled = false;
 			tab.buttonMode = true;
 			
 			

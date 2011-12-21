@@ -10,14 +10,14 @@
 	import flash.events.MouseEvent;
 	import flash.net.URLRequest;
 	import flash.text.Font;
+	import flash.text.StyleSheet;
 	import flash.text.TextField;
-	import flash.text.TextFieldAutoSize;
 	import flash.text.TextFormat;
 	
 	public class Player extends flash.display.MovieClip
 	{
 		private var _waveformLoader:Loader;
-		private var _paused:Boolean
+		private var _paused:Boolean = true;
 		private var _seekPosition:Number = 0;
 		private var _progressBar:MovieClip;
 		private var _bufferProgress:MovieClip;
@@ -38,10 +38,15 @@
 		private var _seekPressed:Boolean = false;
 		private var univers:Font;
 		
+		var style:StyleSheet = new StyleSheet();
+		
 		public var _console:TextField
 		
 		public function Player() 
 		{
+			style.parseCSS("a:link{text-decoration: none; color:#ffba00;} a:hover{text-decoration: underline;}");
+			
+
 			_volume = volume;
 			_volumeSlider = volume.slider;
 			_volumeSlider.mouseEnabled = true;
@@ -53,8 +58,10 @@
 			_playToggle = playToggle;
 			_console = console;
 			var univers = new Univers();
-			var selectorFormat:TextFormat = new TextFormat(univers.fontName,12,0xffffff);
+			var selectorFormat:TextFormat = new TextFormat(univers.fontName,14,0xffffff);
 			_console.defaultTextFormat = selectorFormat;
+			selectorFormat.size = 14;
+			_console.styleSheet = style;
 
 			_volumeSlider.addEventListener(MouseEvent.MOUSE_DOWN, onVolumeSliderDown);
 
@@ -183,10 +190,10 @@
 		}
 		private function checkCommentHit(isSeeking:Boolean = false){
 			var nowTime:Number = isSeeking ? (mouseX/waveform.width)*_totalTime :_currentTime;
-			var preScan:Number = isSeeking ? 100 : 100;
-			var postScan:Number = isSeeking ? 100 : 1000;
+			var preScan:Number = isSeeking ? 5000 : 2000;
+			var postScan:Number = isSeeking ? 5000 : 10000;
 			
-			for (var i =0; i< comments.length; i++){
+			for (var i = 0; i< comments.length; i++){
 				
 				var cm:Comment = comments[i] as Comment;
 				var startTime:Number = cm.timestamp - preScan;
@@ -195,18 +202,38 @@
 				if (startTime < 0) startTime = 0;
 				if (endTime > _totalTime) endTime = _totalTime;
 				if( nowTime > startTime && nowTime < endTime && cm.body.charAt(0) != "@"){
-					_console.text = cm.username+": "+cm.body;
+					
+					var words:Array = cm.body.split(" ");
+					for (var k:uint = 0; k < words.length; k++){
+						if(words[k].search("http") >= 0) {
+							words[k] = createLink(words[k]);
+						}
+					}
+					var comment:String = words.join(" ");
+					
+					_console.htmlText = createUserLink(cm.username,cm.userLink)+": "+comment;
+					
 					for (var j in comments){
 						if(cm.timestamp == comments[j].timestamp){
-							if(comments[j] != cm) _console.appendText("\n"+comments[j].username+": "+comments[j].body);
+							if(comments[j] != cm) {
+								_console.htmlText = _console.text + ("\n"+createUserLink(comments[j].username,comments[j].userLink)+": "+comment);
+							}
 						}
 					}
 					commentClips[i].gotoAndStop(2);
 					break;
 				} 
-				_console.text = "";
+				
 			}
 
+		}
+		private function createLink(txt:String):String{
+			var url:String = "<a href='"+txt+"' target='new'>"+txt+"</a>";
+			return url;
+		}
+		private function createUserLink(userName:String,userLink:String):String{
+			var url:String = "<a href='"+userLink+"' target='new'>"+userName+"</a>";
+			return url;
 		}
 		private function onPlayToggle(e:MouseEvent){
 			dispatchEvent(new PlayerEvent(PlayerEvent.PLAYTOGGLE));
